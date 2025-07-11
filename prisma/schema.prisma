@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionFrom {
+  WALLET
+  POCKET
+  GOALS
+}
+
+model User {
+  user_id                   String            @id @unique @default(nanoid())
+  email                     String            @unique
+  password                  String
+  name                      String
+  profile_image             String?
+  totp_secrete              String?
+  is_2fa_active             Boolean           @default(false)
+  created_at                DateTime          @default(now())
+  updated_at                DateTime          @updatedAt
+  user_wallet               Wallet[]
+}
+
+model Wallet {
+  wallet_id                 String            @id @unique @default(nanoid())
+  wallet_name               String
+  wallet_amount             Int
+  is_wallet_active          Boolean           @default(false)
+  user_pocket               Pocket[]
+  user_goals                Goals[]
+  recent_transaction        RecentTransaction[]
+  wallet_owner_id           String
+  wallet_owner              User              @relation(fields: [wallet_owner_id], references: [user_id])
+  created_at                DateTime          @default(now())
+}
+
+model Pocket {
+  pocket_id                 String            @id @unique @default(nanoid())
+  pocket_name               String
+  pocket_description        String?
+  pocket_ammount            Int
+  wallet_owner_id           String
+  wallet_owner              Wallet            @relation(fields: [wallet_owner_id], references: [wallet_id])
+  pocket_history            RecentTransaction[]
+  created_at                DateTime          @default(now())
+}
+
+model Goals {
+  goals_id                  String            @id @unique @default(nanoid())
+  goals_name                String
+  goals_description         String?
+  goals_set_amount          Int
+  goals_amount              Int
+  goals_attachment          String?
+  wallet_owner_id           String
+  wallet_owner              Wallet            @relation(fields: [wallet_owner_id], references: [wallet_id])
+  goals_history             RecentTransaction[]
+  created_at                DateTime          @default(now())
+}
+
+model RecentTransaction {
+  transaction_id            String            @id @unique @default(nanoid())
+  transaction_name          String
+  transaction_ammount       Int
+  transaction_type          TransactionType
+  transaction_from          TransactionFrom
+  transaction_attachment    String?
+  transaction_description   String?
+  transaction_date          DateTime
+  created_at                DateTime          @default(now())
+  wallet_owner_id           String
+  wallet_owner              Wallet            @relation(fields: [wallet_owner_id], references: [wallet_id])
+  goals_history_id          String
+  goals_history             Goals?            @relation(fields: [goals_history_id], references: [goals_id])
+  pocket_history_id         String
+  pocket_history            Pocket?           @relation(fields: [pocket_history_id], references: [pocket_id])
+}
+
+
