@@ -13,8 +13,8 @@ import {
   UpdateStatusWalletDTO,
   UpdateWalletBodyDTO,
 } from './dto/wallet.dto';
-import { GetUser } from 'auth/decorators/user.decorator';
-import { JWTPayloadUser } from 'auth/interface/authResponse.interface';
+import { GetUser } from '../auth/decorators/user.decorator';
+import { JWTPayloadUser } from '../auth/interface/authResponse.interface';
 
 @Controller('wallet')
 export class WalletController {
