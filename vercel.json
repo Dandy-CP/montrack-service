@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "prisma generate && prisma migrate deploy && nest build",
   "builds": [
     {
       "src": "src/main.ts",
