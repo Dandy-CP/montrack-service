@@ -9,17 +9,6 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum TransactionType {
-  INCOME
-  EXPENSE
-}
-
-enum TransactionFrom {
-  WALLET
-  POCKET
-  GOALS
-}
-
 model User {
   user_id                   String            @id @unique @default(nanoid())
   email                     String            @unique
@@ -74,17 +63,17 @@ model RecentTransaction {
   transaction_id            String            @id @unique @default(nanoid())
   transaction_name          String
   transaction_ammount       Int
-  transaction_type          TransactionType
-  transaction_from          TransactionFrom
+  transaction_type          String
+  transaction_from          String
   transaction_attachment    String?
   transaction_description   String?
-  transaction_date          DateTime
+  transaction_date          String
   created_at                DateTime          @default(now())
   wallet_owner_id           String
   wallet_owner              Wallet            @relation(fields: [wallet_owner_id], references: [wallet_id])
-  goals_history_id          String
+  goals_history_id          String?
   goals_history             Goals?            @relation(fields: [goals_history_id], references: [goals_id])
-  pocket_history_id         String
+  pocket_history_id         String?
   pocket_history            Pocket?           @relation(fields: [pocket_history_id], references: [pocket_id])
 }
 
