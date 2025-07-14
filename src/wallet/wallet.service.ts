@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateWalletBodyDTO,
+  UpdateBalanceWalletDTO,
   UpdateStatusWalletDTO,
   UpdateWalletBodyDTO,
 } from './dto/wallet.dto';
@@ -15,46 +16,47 @@ export class WalletService {
   constructor(private prisma: PrismaService) {}
 
   async GetWalletList(userId: string) {
-    const walletInDB = await this.prisma.wallet.findMany({
+    return await this.prisma.wallet.findMany({
       where: { wallet_owner_id: userId },
+      include: {
+        user_pocket: true,
+        user_goals: true,
+      },
     });
-
-    if (!walletInDB) {
-      throw new NotFoundException('Wallet not found');
-    }
-
-    return {
-      message: 'Success',
-      data: walletInDB,
-    };
   }
 
   async GetActiveWallet(userId: string) {
     const walletInDB = await this.prisma.wallet.findMany({
-      where: { wallet_owner_id: userId },
+      where: { wallet_owner_id: userId, is_wallet_active: true },
+      include: {
+        user_goals: true,
+        user_pocket: true,
+        recent_transaction: true,
+        wallet_owner: {
+          select: {
+            user_id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
 
-    if (!walletInDB) {
-      throw new NotFoundException('Wallet not found');
-    }
-
-    const activeWallet = walletInDB.filter(
-      (value) => value.is_wallet_active === true,
-    )[0];
-
-    return {
-      message: 'Success',
-      data: activeWallet,
-    };
+    return walletInDB.filter((value) => value.is_wallet_active === true)[0];
   }
 
-  async CreateWallet(payload: CreateWalletBodyDTO, userId: string) {
+  async CreateWallet(
+    payload: CreateWalletBodyDTO,
+    userId: string,
+    activeDefault: boolean = false,
+  ) {
     const { wallet_name, wallet_amount } = payload;
 
-    const valueCreated = await this.prisma.wallet.create({
+    return await this.prisma.wallet.create({
       data: {
         wallet_name: wallet_name,
         wallet_amount: wallet_amount,
+        is_wallet_active: activeDefault,
         wallet_owner: {
           connect: {
             user_id: userId,
@@ -62,11 +64,6 @@ export class WalletService {
         },
       },
     });
-
-    return {
-      message: 'Success create new wallet',
-      data: valueCreated,
-    };
   }
 
   async UpdateWallet(payload: UpdateWalletBodyDTO, walletID: string) {
@@ -82,7 +79,7 @@ export class WalletService {
       throw new NotFoundException('Wallet not found');
     }
 
-    const valueUpdated = await this.prisma.wallet.update({
+    return await this.prisma.wallet.update({
       where: {
         wallet_id: walletID,
       },
@@ -91,11 +88,30 @@ export class WalletService {
         wallet_amount: wallet_amount,
       },
     });
+  }
 
-    return {
-      message: 'Success update wallet',
-      data: valueUpdated,
-    };
+  async updateWalletBalance(payload: UpdateBalanceWalletDTO, userId: string) {
+    const { amount, transaction_type } = payload;
+
+    const activeWallet = await this.GetActiveWallet(userId);
+    let finalAmount = activeWallet.wallet_amount;
+
+    if (transaction_type === 'INCOME') {
+      finalAmount = finalAmount + amount;
+    }
+
+    if (transaction_type === 'EXPENSE') {
+      finalAmount = finalAmount - amount;
+    }
+
+    return await this.prisma.wallet.update({
+      where: {
+        wallet_id: activeWallet.wallet_id,
+      },
+      data: {
+        wallet_amount: finalAmount,
+      },
+    });
   }
 
   async DeleteWallet(walletID: string) {
@@ -118,10 +134,6 @@ export class WalletService {
         wallet_id: walletID,
       },
     });
-
-    return {
-      message: 'Success delete wallet',
-    };
   }
 
   async UpdateStatusWallet(
@@ -184,9 +196,6 @@ export class WalletService {
       },
     });
 
-    return {
-      message: 'Success update status wallet',
-      data: updatedValue,
-    };
+    return updatedValue;
   }
 }

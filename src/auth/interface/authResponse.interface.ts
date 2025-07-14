@@ -9,7 +9,6 @@ export interface SignInResponse {
 export interface SingUpResponse {
   name: string;
   email: string;
-  message: string;
 }
 
 export interface JWTPayloadUser {

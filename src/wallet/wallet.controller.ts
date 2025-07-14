@@ -8,12 +8,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { WalletService } from './wallet.service';
+import { GetUser } from '../auth/decorators/user.decorator';
 import {
   CreateWalletBodyDTO,
+  UpdateBalanceWalletDTO,
   UpdateStatusWalletDTO,
   UpdateWalletBodyDTO,
 } from './dto/wallet.dto';
-import { GetUser } from '../auth/decorators/user.decorator';
 import { JWTPayloadUser } from '../auth/interface/authResponse.interface';
 
 @Controller('wallet')
@@ -44,6 +45,14 @@ export class WalletController {
     @Query('wallet_id') walletId: string,
   ) {
     return this.walletService.UpdateWallet(payload, walletId);
+  }
+
+  @Put('/balance')
+  UpdateBalance(
+    @Body() payload: UpdateBalanceWalletDTO,
+    @GetUser() user: JWTPayloadUser,
+  ) {
+    return this.walletService.updateWalletBalance(payload, user.user_id);
   }
 
   @Put('/status')

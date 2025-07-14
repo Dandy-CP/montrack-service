@@ -1,12 +1,15 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignUpBodyDTO } from './dto/SignUp.dto';
+import { Public } from './decorators/public.decorator';
+import {
+  SignUpBodyDTO,
+  SignInBodyDTO,
+  RefreshTokenBodyDTO,
+} from './dto/auth.dto';
 import {
   SignInResponse,
   SingUpResponse,
 } from './interface/authResponse.interface';
-import { SignInBodyDTO } from './dto/signIn.dto';
-import { Public } from './decorators/public.decorator';
 
 @Controller('auth')
 export class AppController {
@@ -14,7 +17,7 @@ export class AppController {
 
   @Public()
   @Post('/signin')
-  SignIn(@Body() payload: SignInBodyDTO): Promise<SignInResponse> {
+  SignIn(@Body() payload: SignInBodyDTO): Promise<SignInResponse | undefined> {
     return this.authService.SignIn(payload);
   }
 
@@ -22,5 +25,10 @@ export class AppController {
   @Post('/signup')
   SignUp(@Body() payload: SignUpBodyDTO): Promise<SingUpResponse> {
     return this.authService.SignUp(payload);
+  }
+
+  @Post('/refresh-token')
+  RefreshToken(@Body() payload: RefreshTokenBodyDTO) {
+    return this.authService.refreshToken(payload);
   }
 }

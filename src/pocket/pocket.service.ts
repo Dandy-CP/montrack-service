@@ -1,0 +1,211 @@
+import {
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { WalletService } from '../wallet/wallet.service';
+import {
+  CreatePocketDTO,
+  UpdatePocketBalanceDTO,
+  UpdatePocketDTO,
+} from './dto/pocket.dto';
+
+@Injectable()
+export class PocketService {
+  constructor(
+    private prisma: PrismaService,
+    private walletService: WalletService,
+  ) {}
+
+  async GetPocketList(userId: string) {
+    const activeWallet = await this.walletService.GetActiveWallet(userId);
+
+    return await this.prisma.pocket.findMany({
+      where: {
+        wallet_owner_id: activeWallet.wallet_id,
+      },
+      include: {
+        pocket_history: true,
+        wallet_owner: true,
+      },
+    });
+  }
+
+  async GetPocketDetails(userId: string, pocketId: string) {
+    const activeWallet = await this.walletService.GetActiveWallet(userId);
+
+    const PocketInDB = await this.prisma.pocket.findUnique({
+      where: {
+        wallet_owner_id: activeWallet.wallet_id,
+        pocket_id: pocketId,
+      },
+      include: {
+        pocket_history: true,
+      },
+    });
+
+    if (!PocketInDB) {
+      throw new NotFoundException('Pocket not found');
+    }
+
+    return PocketInDB;
+  }
+
+  async GetWalletBallance(userId: string) {
+    const activeWallet = await this.walletService.GetActiveWallet(userId);
+
+    const allPocketAmount = activeWallet.user_pocket
+      .map((value) => value.pocket_ammount)
+      .sort((a, b) => b - a);
+
+    const allPocketBalance = allPocketAmount.reduce(
+      (accumulator, currentValue) => {
+        return accumulator + currentValue;
+      },
+    );
+
+    const availableWalletBalance =
+      activeWallet.wallet_amount - allPocketBalance;
+
+    return {
+      balance: availableWalletBalance,
+    };
+  }
+
+  async CreatePocket(payload: CreatePocketDTO, userId: string) {
+    const { pocket_name, pocket_amount, pocket_description } = payload;
+
+    const activeWallet = await this.walletService.GetActiveWallet(userId);
+
+    const allPocketAmount = activeWallet.user_pocket
+      .map((value) => value.pocket_ammount)
+      .sort((a, b) => b - a);
+
+    const allPocketBalance = allPocketAmount.reduce(
+      (accumulator, currentValue) => {
+        return accumulator + currentValue;
+      },
+    );
+
+    const availableWalletBalance =
+      activeWallet.wallet_amount - allPocketBalance;
+
+    if (pocket_amount <= availableWalletBalance) {
+      return await this.prisma.pocket.create({
+        data: {
+          pocket_name: pocket_name,
+          pocket_ammount: pocket_amount,
+          pocket_description: pocket_description,
+          wallet_owner: {
+            connect: {
+              wallet_id: activeWallet.wallet_id,
+            },
+          },
+        },
+      });
+    } else {
+      throw new UnprocessableEntityException('Wallet ammount is not enough');
+    }
+  }
+
+  async UpdatePocket(
+    payload: UpdatePocketDTO,
+    pocketID: string,
+    userId: string,
+  ) {
+    const { pocket_name, pocket_amount, pocket_description } = payload;
+
+    const pocketInDB = await this.prisma.pocket.findUnique({
+      where: {
+        pocket_id: pocketID,
+      },
+    });
+
+    if (!pocketInDB) {
+      throw new NotFoundException('Pocket not found');
+    }
+
+    const activeWallet = await this.walletService.GetActiveWallet(userId);
+
+    const allPocketAmount = activeWallet.user_pocket
+      .filter((value) => value.pocket_id !== pocketID)
+      .map((value) => value.pocket_ammount)
+      .sort((a, b) => b - a);
+
+    const allPocketBalance = allPocketAmount.reduce(
+      (accumulator, currentValue) => {
+        return accumulator + currentValue;
+      },
+    );
+
+    const availableWalletBalance =
+      activeWallet.wallet_amount - allPocketBalance;
+
+    if (pocket_amount <= availableWalletBalance) {
+      return await this.prisma.pocket.update({
+        where: {
+          pocket_id: pocketID,
+        },
+        data: {
+          pocket_name: pocket_name,
+          pocket_ammount: pocket_amount,
+          pocket_description: pocket_description,
+        },
+      });
+    } else {
+      throw new UnprocessableEntityException('Wallet ammount is not enough');
+    }
+  }
+
+  async UpdatePocketBalance(payload: UpdatePocketBalanceDTO, pocketId: string) {
+    const { amount, transaction_type } = payload;
+
+    const pocketInDB = await this.prisma.pocket.findUnique({
+      where: {
+        pocket_id: pocketId,
+      },
+    });
+
+    if (!pocketInDB) {
+      throw new NotFoundException('Pocket not found');
+    }
+
+    let finalAmount = pocketInDB.pocket_ammount;
+
+    if (transaction_type === 'INCOME') {
+      finalAmount = finalAmount + amount;
+    }
+
+    if (transaction_type === 'EXPENSE') {
+      finalAmount = finalAmount - amount;
+    }
+
+    return await this.prisma.pocket.update({
+      where: {
+        pocket_id: pocketId,
+      },
+      data: {
+        pocket_ammount: finalAmount,
+      },
+    });
+  }
+
+  async DeletePocket(pcoketId: string) {
+    const pocketInDB = await this.prisma.pocket.findUnique({
+      where: {
+        pocket_id: pcoketId,
+      },
+    });
+
+    if (!pocketInDB) {
+      throw new NotFoundException('Pocket not found');
+    }
+
+    await this.prisma.pocket.delete({
+      where: {
+        pocket_id: pcoketId,
+      },
+    });
+  }
+}

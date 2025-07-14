@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber } from 'class-validator';
 
 export class CreateWalletBodyDTO {
   @IsNotEmpty()
@@ -14,6 +14,15 @@ export class UpdateWalletBodyDTO {
 
   @IsNotEmpty()
   wallet_amount: number;
+}
+
+export class UpdateBalanceWalletDTO {
+  @IsNotEmpty()
+  @IsNumber()
+  amount: number;
+
+  @IsNotEmpty()
+  transaction_type: string;
 }
 
 export class UpdateStatusWalletDTO {

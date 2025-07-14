@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AppController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
+import { AuthService } from './auth.service';
+import { AppController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
+import { WalletModule } from '../wallet/wallet.module';
+import { WalletService } from '../wallet/wallet.service';
 
 @Module({
   imports: [
+    WalletModule,
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
@@ -18,6 +21,7 @@ import { AuthGuard } from './auth.guard';
   controllers: [AppController],
   providers: [
     AuthService,
+    WalletService,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
