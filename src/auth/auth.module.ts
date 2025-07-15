@@ -6,10 +6,13 @@ import { AppController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { WalletModule } from '../wallet/wallet.module';
 import { WalletService } from '../wallet/wallet.service';
+import { TotpModule } from '../totp/totp.module';
+import { TotpService } from '../totp/totp.service';
 
 @Module({
   imports: [
     WalletModule,
+    TotpModule,
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
@@ -22,6 +25,7 @@ import { WalletService } from '../wallet/wallet.service';
   providers: [
     AuthService,
     WalletService,
+    TotpService,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

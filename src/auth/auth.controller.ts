@@ -5,11 +5,12 @@ import {
   SignUpBodyDTO,
   SignInBodyDTO,
   RefreshTokenBodyDTO,
+  VerifyNew2FABodyDTO,
+  Validate2FABodyDTO,
+  Disable2FABodyDTO,
 } from './dto/auth.dto';
-import {
-  SignInResponse,
-  SingUpResponse,
-} from './interface/authResponse.interface';
+import { JWTPayloadUser } from './interface/authResponse.interface';
+import { GetUser } from './decorators/user.decorator';
 
 @Controller('auth')
 export class AppController {
@@ -17,18 +18,45 @@ export class AppController {
 
   @Public()
   @Post('/signin')
-  SignIn(@Body() payload: SignInBodyDTO): Promise<SignInResponse | undefined> {
+  SignIn(@Body() payload: SignInBodyDTO) {
     return this.authService.SignIn(payload);
   }
 
   @Public()
   @Post('/signup')
-  SignUp(@Body() payload: SignUpBodyDTO): Promise<SingUpResponse> {
+  SignUp(@Body() payload: SignUpBodyDTO) {
     return this.authService.SignUp(payload);
   }
 
   @Post('/refresh-token')
   RefreshToken(@Body() payload: RefreshTokenBodyDTO) {
     return this.authService.refreshToken(payload);
+  }
+
+  @Public()
+  @Post('/validate-2fa')
+  Validate2FA(@Body() payload: Validate2FABodyDTO) {
+    return this.authService.validate2FA(payload);
+  }
+
+  @Post('/enable-2fa')
+  Enable2FA(@GetUser() user: JWTPayloadUser) {
+    return this.authService.enable2FA(user.user_id);
+  }
+
+  @Post('/verify-new-2fa')
+  VerifyNew2FA(
+    @Body() payload: VerifyNew2FABodyDTO,
+    @GetUser() user: JWTPayloadUser,
+  ) {
+    return this.authService.verifyNew2FA(payload, user.user_id);
+  }
+
+  @Post('/disable-2fa')
+  Disable2FA(
+    @Body() payload: Disable2FABodyDTO,
+    @GetUser() user: JWTPayloadUser,
+  ) {
+    return this.authService.disable2FA(payload, user.user_id);
   }
 }

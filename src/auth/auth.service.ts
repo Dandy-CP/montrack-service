@@ -1,6 +1,7 @@
 import {
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -8,14 +9,14 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletService } from '../wallet/wallet.service';
-import {
-  SignInResponse,
-  SingUpResponse,
-} from './interface/authResponse.interface';
+import { TotpService } from '../totp/totp.service';
 import {
   SignInBodyDTO,
   SignUpBodyDTO,
   RefreshTokenBodyDTO,
+  VerifyNew2FABodyDTO,
+  Validate2FABodyDTO,
+  Disable2FABodyDTO,
 } from './dto/auth.dto';
 
 @Injectable()
@@ -24,9 +25,10 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private walletService: WalletService,
+    private totpService: TotpService,
   ) {}
 
-  async SignIn(payload: SignInBodyDTO): Promise<SignInResponse> {
+  async SignIn(payload: SignInBodyDTO) {
     const userInDB = await this.prisma.user.findUnique({
       where: { email: payload.email },
     });
@@ -38,6 +40,13 @@ export class AuthService {
 
     if (!userInDB || !isPasswordMatch) {
       throw new UnauthorizedException('Wrong email or password');
+    }
+
+    if (userInDB.is_2fa_active) {
+      return {
+        message: '2FA is enabled please validate',
+        userId: userInDB.user_id,
+      };
     }
 
     const jwtPayload = {
@@ -53,15 +62,15 @@ export class AuthService {
     });
 
     return {
+      message: 'Success login',
       name: userInDB.name,
       email: userInDB.email,
-      is2FA: userInDB.is_2fa_active,
       access_token,
       refresh_token,
     };
   }
 
-  async SignUp(payload: SignUpBodyDTO): Promise<SingUpResponse> {
+  async SignUp(payload: SignUpBodyDTO) {
     const userInDB = await this.prisma.user.findUnique({
       where: {
         email: payload.email,
@@ -132,5 +141,145 @@ export class AuthService {
       access_token,
       refresh_token,
     };
+  }
+
+  async enable2FA(userId: string) {
+    const userInDB = await this.prisma.user.findUnique({
+      where: {
+        user_id: userId,
+      },
+    });
+
+    if (!userInDB) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (userInDB.is_2fa_active) {
+      throw new UnprocessableEntityException('User has been enabled 2FA');
+    }
+
+    const { qr_code, base32_secret } = await this.totpService.CreateTotp(
+      userInDB.name,
+    );
+
+    return {
+      qrCode: qr_code,
+      secret: base32_secret,
+    };
+  }
+
+  async verifyNew2FA(payload: VerifyNew2FABodyDTO, userId: string) {
+    const userInDB = await this.prisma.user.findUnique({
+      where: {
+        user_id: userId,
+      },
+    });
+
+    if (!userInDB) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (userInDB.is_2fa_active) {
+      throw new UnprocessableEntityException('User has been enabled 2FA');
+    }
+
+    const { token_otp } = this.totpService.VerifyTotp(payload.totp_secret);
+
+    if (payload.token_pin === token_otp) {
+      const updatedValue = await this.prisma.user.update({
+        where: {
+          user_id: userId,
+        },
+        data: {
+          is_2fa_active: true,
+          totp_secrete: payload.totp_secret,
+        },
+      });
+
+      return {
+        message: 'Success actived 2FA',
+        updatedValue,
+      };
+    } else {
+      throw new UnprocessableEntityException('Inputed pin not valid');
+    }
+  }
+
+  async validate2FA(payload: Validate2FABodyDTO) {
+    const userInDB = await this.prisma.user.findUnique({
+      where: {
+        user_id: payload.user_id,
+      },
+    });
+
+    if (!userInDB) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!userInDB.is_2fa_active) {
+      throw new UnprocessableEntityException('User has not enabled 2FA');
+    }
+
+    const { token_otp } = this.totpService.VerifyTotp(userInDB.totp_secrete!);
+
+    if (payload.token_pin === token_otp) {
+      const jwtPayload = {
+        sub: userInDB.user_id,
+        user_id: userInDB.user_id,
+        name: userInDB.name,
+        email: userInDB.email,
+      };
+
+      const access_token = await this.jwtService.signAsync(jwtPayload);
+      const refresh_token = await this.jwtService.signAsync(jwtPayload, {
+        expiresIn: '10d',
+      });
+
+      return {
+        message: 'Success login',
+        name: userInDB.name,
+        email: userInDB.email,
+        access_token,
+        refresh_token,
+      };
+    } else {
+      throw new UnprocessableEntityException('Inputed pin not valid');
+    }
+  }
+
+  async disable2FA(payload: Disable2FABodyDTO, userId: string) {
+    const userInDB = await this.prisma.user.findUnique({
+      where: {
+        user_id: userId,
+      },
+    });
+
+    if (!userInDB) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!userInDB.is_2fa_active) {
+      throw new UnprocessableEntityException('User has not enabled 2FA');
+    }
+
+    const { token_otp } = this.totpService.VerifyTotp(userInDB.totp_secrete!);
+
+    if (payload.token_pin === token_otp) {
+      await this.prisma.user.update({
+        where: {
+          user_id: userId,
+        },
+        data: {
+          is_2fa_active: false,
+          totp_secrete: null,
+        },
+      });
+
+      return {
+        message: 'Success disable 2FA',
+      };
+    } else {
+      throw new UnprocessableEntityException('Inputed pin not valid');
+    }
   }
 }

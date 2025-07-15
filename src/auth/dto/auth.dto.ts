@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsEmail, IsJWT } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsEmail,
+  IsJWT,
+  IsString,
+  IsBase32,
+} from 'class-validator';
 
 export class SignInBodyDTO {
   @IsNotEmpty()
@@ -25,4 +31,31 @@ export class RefreshTokenBodyDTO {
   @IsNotEmpty()
   @IsJWT()
   refresh_token: string;
+}
+
+export class VerifyNew2FABodyDTO {
+  @IsNotEmpty()
+  @IsString()
+  token_pin: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @IsBase32()
+  totp_secret: string;
+}
+
+export class Validate2FABodyDTO {
+  @IsNotEmpty()
+  @IsString()
+  user_id: string;
+
+  @IsNotEmpty()
+  @IsString()
+  token_pin: string;
+}
+
+export class Disable2FABodyDTO {
+  @IsNotEmpty()
+  @IsString()
+  token_pin: string;
 }
