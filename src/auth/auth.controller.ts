@@ -11,6 +11,7 @@ import {
 } from './dto/auth.dto';
 import { JWTPayloadUser } from './interface/authResponse.interface';
 import { GetUser } from './decorators/user.decorator';
+import { NoCache } from '../redis/decorator/no-cache.decorator';
 
 @Controller('auth')
 export class AppController {
@@ -18,33 +19,39 @@ export class AppController {
 
   @Public()
   @Post('/signin')
+  @NoCache()
   SignIn(@Body() payload: SignInBodyDTO) {
     return this.authService.SignIn(payload);
   }
 
   @Public()
   @Post('/signup')
+  @NoCache()
   SignUp(@Body() payload: SignUpBodyDTO) {
     return this.authService.SignUp(payload);
   }
 
   @Post('/refresh-token')
+  @NoCache()
   RefreshToken(@Body() payload: RefreshTokenBodyDTO) {
     return this.authService.refreshToken(payload);
   }
 
   @Public()
   @Post('/validate-2fa')
+  @NoCache()
   Validate2FA(@Body() payload: Validate2FABodyDTO) {
     return this.authService.validate2FA(payload);
   }
 
   @Post('/enable-2fa')
+  @NoCache()
   Enable2FA(@GetUser() user: JWTPayloadUser) {
     return this.authService.enable2FA(user.user_id);
   }
 
   @Post('/verify-new-2fa')
+  @NoCache()
   VerifyNew2FA(
     @Body() payload: VerifyNew2FABodyDTO,
     @GetUser() user: JWTPayloadUser,
@@ -53,6 +60,7 @@ export class AppController {
   }
 
   @Post('/disable-2fa')
+  @NoCache()
   Disable2FA(
     @Body() payload: Disable2FABodyDTO,
     @GetUser() user: JWTPayloadUser,
