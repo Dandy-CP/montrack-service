@@ -119,11 +119,7 @@ export class AuthService {
         throw new InternalServerErrorException(error);
       });
 
-    const jwtValue = await this.jwtService
-      .decode(payload.refresh_token)
-      .catch((error: any) => {
-        throw new InternalServerErrorException(error);
-      });
+    const jwtValue = this.jwtService.decode(payload.refresh_token);
 
     const jwtPayload = {
       sub: jwtValue.user_id,
