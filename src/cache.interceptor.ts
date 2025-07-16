@@ -27,7 +27,7 @@ export class HttpCacheInterceptor extends CacheInterceptor {
     const methode = request.method;
     const baseEndpoint = request.url.split('/')[1];
     const prefixEndpoint = request.url.split('/')[2];
-    const storeId = `${baseEndpoint}-${prefixEndpoint}:${request.user.user_id}`;
+    const storeId = `${baseEndpoint}-${prefixEndpoint}:${request?.user?.user_id}`;
 
     const ignoreCaching = this.reflector.get<boolean>(
       'ignoreCaching',
@@ -51,7 +51,7 @@ export class HttpCacheInterceptor extends CacheInterceptor {
 
     const keys = await this.redisService.getAllKeys(
       baseEndpoint,
-      request.user.user_id,
+      request?.user?.user_id,
     );
 
     const ignoreCaching = this.reflector.get<boolean>(
