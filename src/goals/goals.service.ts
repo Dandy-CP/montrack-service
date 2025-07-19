@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { WalletService } from '../wallet/wallet.service';
+import { UploadService } from '../upload/upload.service';
 import {
   CreateGoalsDTO,
   UpdateGoalsBalanceDTO,
   UpdateGoalsDTO,
 } from './dto/goals.dto';
-import { WalletService } from '../wallet/wallet.service';
-import { UploadService } from '../upload/upload.service';
+import { QueryPagination } from '../prisma/dto/query-pagination.dto';
 
 @Injectable()
 export class GoalsService {
@@ -16,18 +17,29 @@ export class GoalsService {
     private uploadService: UploadService,
   ) {}
 
-  async GetGoalsList(userId: string) {
-    return await this.prisma.goals.findMany({
-      where: {
-        wallet_owner: {
-          wallet_owner_id: userId,
+  async GetGoalsList(userId: string, queryPage: QueryPagination) {
+    const [data, meta] = await this.prisma
+      .extends()
+      .goals.paginate({
+        where: {
+          wallet_owner: {
+            wallet_owner_id: userId,
+          },
         },
-      },
-      include: {
-        goals_history: true,
-        wallet_owner: true,
-      },
-    });
+        include: {
+          goals_history: true,
+          wallet_owner: true,
+        },
+      })
+      .withPages({
+        page: queryPage.page,
+        limit: queryPage.limit,
+      });
+
+    return {
+      data,
+      meta,
+    };
   }
 
   async CreateGoals(payload: CreateGoalsDTO, userId: string) {

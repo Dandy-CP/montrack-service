@@ -5,6 +5,7 @@ import { WalletService } from '../wallet/wallet.service';
 import { PocketService } from '../pocket/pocket.service';
 import { UploadService } from '../upload/upload.service';
 import { GoalsService } from '../goals/goals.service';
+import { QueryPagination } from '../prisma/dto/query-pagination.dto';
 
 @Injectable()
 export class TransactionService {
@@ -16,15 +17,30 @@ export class TransactionService {
     private uploadService: UploadService,
   ) {}
 
-  async GetTransactionList(userId: string, transactionFrom: string) {
-    return await this.prisma.recentTransaction.findMany({
-      where: {
-        transaction_from: transactionFrom,
-        wallet_owner: {
-          wallet_owner_id: userId,
+  async GetTransactionList(
+    userId: string,
+    transactionFrom: string,
+    queryPage: QueryPagination,
+  ) {
+    const [data, meta] = await this.prisma
+      .extends()
+      .recentTransaction.paginate({
+        where: {
+          transaction_from: transactionFrom,
+          wallet_owner: {
+            wallet_owner_id: userId,
+          },
         },
-      },
-    });
+      })
+      .withPages({
+        page: queryPage.page,
+        limit: queryPage.limit,
+      });
+
+    return {
+      data,
+      meta,
+    };
   }
 
   async CreateTransaction(payload: CreateTransactionBodyDTO, userId: string) {

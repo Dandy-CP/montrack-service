@@ -10,6 +10,7 @@ import {
   UpdatePocketBalanceDTO,
   UpdatePocketDTO,
 } from './dto/pocket.dto';
+import { QueryPagination } from '../prisma/dto/query-pagination.dto';
 
 @Injectable()
 export class PocketService {
@@ -18,18 +19,29 @@ export class PocketService {
     private walletService: WalletService,
   ) {}
 
-  async GetPocketList(userId: string) {
+  async GetPocketList(userId: string, queryPage: QueryPagination) {
     const activeWallet = await this.walletService.GetActiveWallet(userId);
 
-    return await this.prisma.pocket.findMany({
-      where: {
-        wallet_owner_id: activeWallet.wallet_id,
-      },
-      include: {
-        pocket_history: true,
-        wallet_owner: true,
-      },
-    });
+    const [data, meta] = await this.prisma
+      .extends()
+      .pocket.paginate({
+        where: {
+          wallet_owner_id: activeWallet.wallet_id,
+        },
+        include: {
+          pocket_history: true,
+          wallet_owner: true,
+        },
+      })
+      .withPages({
+        page: queryPage.page,
+        limit: queryPage.limit,
+      });
+
+    return {
+      data,
+      meta,
+    };
   }
 
   async GetPocketDetails(userId: string, pocketId: string) {

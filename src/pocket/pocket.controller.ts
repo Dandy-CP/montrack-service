@@ -15,14 +15,18 @@ import {
   UpdatePocketBalanceDTO,
   UpdatePocketDTO,
 } from './dto/pocket.dto';
+import { QueryPagination } from '../prisma/dto/query-pagination.dto';
 
 @Controller('pocket')
 export class PocketController {
   constructor(private readonly pocketService: PocketService) {}
 
   @Get('/list')
-  GetPocketList(@GetUser() user: JWTPayloadUser) {
-    return this.pocketService.GetPocketList(user.user_id);
+  GetPocketList(
+    @GetUser() user: JWTPayloadUser,
+    @Query() query: QueryPagination,
+  ) {
+    return this.pocketService.GetPocketList(user.user_id, query);
   }
 
   @Get('/detail')

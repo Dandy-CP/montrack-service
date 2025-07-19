@@ -16,14 +16,18 @@ import {
   UpdateGoalsBalanceDTO,
   UpdateGoalsDTO,
 } from './dto/goals.dto';
+import { QueryPagination } from '../prisma/dto/query-pagination.dto';
 
 @Controller('goals')
 export class GoalsController {
   constructor(private readonly goalsService: GoalsService) {}
 
   @Get('/list')
-  GetListGoals(@GetUser() user: JWTPayloadUser) {
-    return this.goalsService.GetGoalsList(user.user_id);
+  GetListGoals(
+    @GetUser() user: JWTPayloadUser,
+    @Query() query: QueryPagination,
+  ) {
+    return this.goalsService.GetGoalsList(user.user_id, query);
   }
 
   @Post('/create')

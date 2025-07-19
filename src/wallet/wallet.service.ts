@@ -10,19 +10,31 @@ import {
   UpdateStatusWalletDTO,
   UpdateWalletBodyDTO,
 } from './dto/wallet.dto';
+import { QueryPagination } from '../prisma/dto/query-pagination.dto';
 
 @Injectable()
 export class WalletService {
   constructor(private prisma: PrismaService) {}
 
-  async GetWalletList(userId: string) {
-    return await this.prisma.wallet.findMany({
-      where: { wallet_owner_id: userId },
-      include: {
-        user_pocket: true,
-        user_goals: true,
-      },
-    });
+  async GetWalletList(userId: string, queryPage: QueryPagination) {
+    const [data, meta] = await this.prisma
+      .extends()
+      .wallet.paginate({
+        where: { wallet_owner_id: userId },
+        include: {
+          user_pocket: true,
+          user_goals: true,
+        },
+      })
+      .withPages({
+        page: queryPage.page,
+        limit: queryPage.limit,
+      });
+
+    return {
+      data,
+      meta,
+    };
   }
 
   async GetActiveWallet(userId: string) {

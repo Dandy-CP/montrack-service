@@ -16,14 +16,18 @@ import {
   UpdateWalletBodyDTO,
 } from './dto/wallet.dto';
 import { JWTPayloadUser } from '../auth/interface/authResponse.interface';
+import { QueryPagination } from '../prisma/dto/query-pagination.dto';
 
 @Controller('wallet')
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   @Get('/list')
-  GetWalletList(@GetUser() user: JWTPayloadUser) {
-    return this.walletService.GetWalletList(user.user_id);
+  GetWalletList(
+    @GetUser() user: JWTPayloadUser,
+    @Query() query: QueryPagination,
+  ) {
+    return this.walletService.GetWalletList(user.user_id, query);
   }
 
   @Get('/active')
