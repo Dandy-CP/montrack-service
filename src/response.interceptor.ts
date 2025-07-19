@@ -11,7 +11,17 @@ import { map } from 'rxjs/operators';
 interface Response<T> {
   statusCode: number;
   message: string;
+  timeStamp: string;
   data: T;
+  meta?: {
+    isFirstPage: boolean;
+    isLastPage: boolean;
+    currentPage: number;
+    previousPage: null | number;
+    nextPage: null | number;
+    pageCount: number;
+    totalCount: number;
+  };
 }
 
 @Injectable()
@@ -28,10 +38,11 @@ export class TransformInterceptor<T>
 
     return next.handle().pipe(
       map((data) => {
-        const responseData = data === null || data === undefined ? {} : data;
+        const responseData = data === null || data === undefined ? null : data;
         const message = this.getDefaultMessage(statusCode);
         const finalMessage = responseData.message || message;
         const finalStatus = responseData.status || statusCode;
+        const metaData = responseData.meta;
 
         if (responseData) {
           delete responseData.message;
@@ -41,10 +52,9 @@ export class TransformInterceptor<T>
         return {
           statusCode: finalStatus,
           message: finalMessage,
-          data: responseData,
-          meta: {
-            timestamp: new Date().toISOString(),
-          },
+          timeStamp: new Date().toISOString(),
+          data: responseData.data || responseData,
+          meta: metaData,
         };
       }),
     );
