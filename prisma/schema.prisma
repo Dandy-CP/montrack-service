@@ -38,8 +38,10 @@ model Wallet {
 model Pocket {
   pocket_id                 String            @id @unique @default(nanoid())
   pocket_name               String
+  pocket_emoji              String
   pocket_description        String?
   pocket_ammount            Int
+  pocket_set_amount         Int
   wallet_owner_id           String
   wallet_owner              Wallet            @relation(fields: [wallet_owner_id], references: [wallet_id])
   pocket_history            RecentTransaction[]
