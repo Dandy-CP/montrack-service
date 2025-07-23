@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletService } from '../wallet/wallet.service';
 import { UploadService } from '../upload/upload.service';
@@ -126,6 +130,10 @@ export class GoalsService {
     }
 
     if (payload.transaction_type === 'EXPENSE') {
+      if (goalsInDB.goals_amount <= payload.amount) {
+        throw new UnprocessableEntityException('Goals ammount is not enough');
+      }
+
       finalAmount = finalAmount - payload.amount;
     }
 

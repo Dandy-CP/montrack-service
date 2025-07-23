@@ -20,6 +20,14 @@ export class RedisService {
     throw new NotFoundException('Value not exist');
   }
 
+  async delete(key: string) {
+    return await this.cacheManager.del(key);
+  }
+
+  async clear() {
+    return await this.cacheManager.clear();
+  }
+
   async getAllKeys(userId: string, pattern?: string) {
     const store = this.cacheManager.stores[0];
     const storeKeys: string[] = [];
@@ -35,12 +43,12 @@ export class RedisService {
     );
   }
 
-  async delete(key: string) {
-    return await this.cacheManager.del(key);
-  }
+  async deleteAllRelatedKeys(userId: string, pattern?: string) {
+    const allKeysValue = await this.getAllKeys(userId, pattern);
 
-  async clear() {
-    return await this.cacheManager.clear();
+    for (const value of allKeysValue) {
+      await this.cacheManager.del(value);
+    }
   }
 
   async setUserSession(payload: {

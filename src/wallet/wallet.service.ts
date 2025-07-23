@@ -106,6 +106,11 @@ export class WalletService {
     const { amount, transaction_type } = payload;
 
     const activeWallet = await this.GetActiveWallet(userId);
+
+    if (!activeWallet) {
+      throw new NotFoundException('Wallet not found');
+    }
+
     let finalAmount = activeWallet.wallet_amount;
 
     if (transaction_type === 'INCOME') {
@@ -113,6 +118,10 @@ export class WalletService {
     }
 
     if (transaction_type === 'EXPENSE') {
+      if (activeWallet.wallet_amount <= amount) {
+        throw new UnprocessableEntityException('Wallet ammount is not enough');
+      }
+
       finalAmount = finalAmount - amount;
     }
 

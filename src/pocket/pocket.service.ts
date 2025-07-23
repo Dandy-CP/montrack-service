@@ -176,6 +176,10 @@ export class PocketService {
     }
 
     if (transaction_type === 'EXPENSE') {
+      if (pocketInDB.pocket_ammount <= amount) {
+        throw new UnprocessableEntityException('Pocket ammount is not enough');
+      }
+
       finalAmount = finalAmount - amount;
     }
 

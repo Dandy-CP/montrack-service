@@ -11,6 +11,8 @@ import { UploadService } from '../upload/upload.service';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { GoalsModule } from '../goals/goals.module';
 import { GoalsService } from '../goals/goals.service';
+import { RedisModule } from '../redis/redis.module';
+import { RedisService } from '../redis/redis.service';
 
 @Module({
   imports: [
@@ -20,6 +22,7 @@ import { GoalsService } from '../goals/goals.service';
     GoalsModule,
     UploadModule,
     SupabaseModule,
+    RedisModule,
   ],
   controllers: [TransactionController],
   providers: [
@@ -28,6 +31,7 @@ import { GoalsService } from '../goals/goals.service';
     PocketService,
     GoalsService,
     UploadService,
+    RedisService,
   ],
 })
 export class TransactionModule {}

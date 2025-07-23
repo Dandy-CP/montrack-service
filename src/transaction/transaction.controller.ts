@@ -10,6 +10,11 @@ import { QueryPagination } from '../prisma/dto/query-pagination.dto';
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
+  @Get('/summary')
+  GetTransactionSummary(@GetUser() user: JWTPayloadUser) {
+    return this.transactionService.transactionSummary(user.user_id);
+  }
+
   @Get('/list')
   GetListTransaction(
     @GetUser() user: JWTPayloadUser,
