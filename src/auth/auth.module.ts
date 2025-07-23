@@ -8,11 +8,14 @@ import { WalletModule } from '../wallet/wallet.module';
 import { WalletService } from '../wallet/wallet.service';
 import { TotpModule } from '../totp/totp.module';
 import { TotpService } from '../totp/totp.service';
+import { RedisModule } from '../redis/redis.module';
+import { RedisService } from '../redis/redis.service';
 
 @Module({
   imports: [
     WalletModule,
     TotpModule,
+    RedisModule,
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
@@ -26,6 +29,7 @@ import { TotpService } from '../totp/totp.service';
     AuthService,
     WalletService,
     TotpService,
+    RedisService,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

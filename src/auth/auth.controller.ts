@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
 import {
@@ -31,6 +31,7 @@ export class AppController {
     return this.authService.SignUp(payload);
   }
 
+  @Public()
   @Post('/refresh-token')
   @NoCache()
   RefreshToken(@Body() payload: RefreshTokenBodyDTO) {
@@ -66,5 +67,17 @@ export class AppController {
     @GetUser() user: JWTPayloadUser,
   ) {
     return this.authService.disable2FA(payload, user.user_id);
+  }
+
+  @Get('/logedin-user')
+  @NoCache()
+  LogedInUser(@GetUser() user: JWTPayloadUser) {
+    return this.authService.getLogedUser(user.user_id);
+  }
+
+  @Post('/logout')
+  @NoCache()
+  LogoutUser(@GetUser() user: JWTPayloadUser) {
+    return this.authService.logOutUser(user.user_id);
   }
 }

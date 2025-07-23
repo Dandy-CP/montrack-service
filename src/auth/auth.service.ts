@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletService } from '../wallet/wallet.service';
 import { TotpService } from '../totp/totp.service';
+import { RedisService } from '../redis/redis.service';
 import {
   SignInBodyDTO,
   SignUpBodyDTO,
@@ -26,7 +27,38 @@ export class AuthService {
     private jwtService: JwtService,
     private walletService: WalletService,
     private totpService: TotpService,
+    private redisService: RedisService,
   ) {}
+
+  async getLogedUser(userId: string) {
+    const userInCache = await this.redisService.get(`session:${userId}`);
+
+    if (userInCache) {
+      return userInCache;
+    }
+
+    throw new UnauthorizedException('User not authenticated');
+  }
+
+  async logOutUser(userId: string) {
+    const userInCache = await this.redisService.get(`session:${userId}`);
+
+    if (userInCache) {
+      // get all cache key value
+      const allCacheKey = await this.redisService.getAllKeys(userId);
+
+      // loop array of string value to delete each keys
+      for (const value of allCacheKey) {
+        await this.redisService.delete(value);
+      }
+
+      return {
+        message: 'Success Logout',
+      };
+    }
+
+    throw new UnauthorizedException('User not authenticated');
+  }
 
   async SignIn(payload: SignInBodyDTO) {
     const userInDB = await this.prisma.user.findUnique({
@@ -58,7 +90,15 @@ export class AuthService {
 
     const access_token = await this.jwtService.signAsync(jwtPayload);
     const refresh_token = await this.jwtService.signAsync(jwtPayload, {
-      expiresIn: '10d',
+      expiresIn: process.env.JWT_REFRESH_EXPIRED,
+    });
+
+    await this.redisService.setUserSession({
+      user_id: userInDB.user_id,
+      name: userInDB.name,
+      email: userInDB.email,
+      access_token,
+      refresh_token,
     });
 
     return {
@@ -130,7 +170,16 @@ export class AuthService {
 
     const access_token = await this.jwtService.signAsync(jwtPayload);
     const refresh_token = await this.jwtService.signAsync(jwtPayload, {
-      expiresIn: '10d',
+      expiresIn: process.env.JWT_REFRESH_EXPIRED,
+    });
+
+    await this.redisService.delete(`session:${jwtValue.user_id}`);
+    await this.redisService.setUserSession({
+      user_id: jwtValue.user_id,
+      name: jwtValue.name,
+      email: jwtValue.email,
+      access_token,
+      refresh_token,
     });
 
     return {
@@ -228,7 +277,15 @@ export class AuthService {
 
       const access_token = await this.jwtService.signAsync(jwtPayload);
       const refresh_token = await this.jwtService.signAsync(jwtPayload, {
-        expiresIn: '10d',
+        expiresIn: process.env.JWT_REFRESH_EXPIRED,
+      });
+
+      await this.redisService.setUserSession({
+        user_id: userInDB.user_id,
+        name: userInDB.name,
+        email: userInDB.email,
+        access_token,
+        refresh_token,
       });
 
       return {

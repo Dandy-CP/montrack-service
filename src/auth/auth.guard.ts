@@ -8,12 +8,14 @@ import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { IS_PUBLIC_KEY } from './decorators/public.decorator';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private reflector: Reflector,
+    private redisService: RedisService,
   ) {}
 
   private extractTokenFromHeader(request: Request): string | undefined {
@@ -38,16 +40,22 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Request need token');
     }
 
-    try {
-      const payload = await this.jwtService.verifyAsync(token, {
+    // Verify Bearer token
+    const payload = await this.jwtService
+      .verifyAsync(token, {
         secret: process.env.JWT_SECRET,
+      })
+      .catch((error) => {
+        throw new UnauthorizedException(`Token not valid ${error.message}`);
       });
 
-      request['user'] = payload;
-    } catch (error: any) {
-      console.log(error);
-      throw new UnauthorizedException('Token not valid');
-    }
+    // get active user session
+    await this.redisService.get(`session:${payload.user_id}`).catch(() => {
+      throw new UnauthorizedException('User not authenticated');
+    });
+
+    // Set user request header with JWT payload value
+    request['user'] = payload;
 
     return true;
   }
