@@ -19,3 +19,11 @@ export interface JWTPayloadUser {
   iat: number;
   exp: number;
 }
+
+export interface UserInCache {
+  user_id: string;
+  name: string;
+  email: string;
+  access_token: string;
+  refresh_token: string;
+}
