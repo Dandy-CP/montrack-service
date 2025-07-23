@@ -64,29 +64,9 @@ export class PocketService {
     return PocketInDB;
   }
 
-  async GetWalletBallance(userId: string) {
-    const activeWallet = await this.walletService.GetActiveWallet(userId);
-
-    const allPocketAmount = activeWallet.user_pocket
-      .map((value) => value.pocket_ammount)
-      .sort((a, b) => b - a);
-
-    const allPocketBalance = allPocketAmount.reduce(
-      (accumulator, currentValue) => {
-        return accumulator + currentValue;
-      },
-    );
-
-    const availableWalletBalance =
-      activeWallet.wallet_amount - allPocketBalance;
-
-    return {
-      balance: availableWalletBalance,
-    };
-  }
-
   async CreatePocket(payload: CreatePocketDTO, userId: string) {
-    const { pocket_name, pocket_amount, pocket_description } = payload;
+    const { pocket_name, pocket_emoji, pocket_amount, pocket_description } =
+      payload;
 
     const activeWallet = await this.walletService.GetActiveWallet(userId);
 
@@ -98,6 +78,7 @@ export class PocketService {
       (accumulator, currentValue) => {
         return accumulator + currentValue;
       },
+      0,
     );
 
     const availableWalletBalance =
@@ -107,7 +88,9 @@ export class PocketService {
       return await this.prisma.pocket.create({
         data: {
           pocket_name: pocket_name,
+          pocket_emoji: pocket_emoji,
           pocket_ammount: pocket_amount,
+          pocket_set_amount: pocket_amount,
           pocket_description: pocket_description,
           wallet_owner: {
             connect: {
@@ -126,7 +109,8 @@ export class PocketService {
     pocketID: string,
     userId: string,
   ) {
-    const { pocket_name, pocket_amount, pocket_description } = payload;
+    const { pocket_name, pocket_emoji, pocket_amount, pocket_description } =
+      payload;
 
     const pocketInDB = await this.prisma.pocket.findUnique({
       where: {
@@ -161,7 +145,9 @@ export class PocketService {
         },
         data: {
           pocket_name: pocket_name,
+          pocket_emoji: pocket_emoji,
           pocket_ammount: pocket_amount,
+          pocket_set_amount: pocket_amount,
           pocket_description: pocket_description,
         },
       });

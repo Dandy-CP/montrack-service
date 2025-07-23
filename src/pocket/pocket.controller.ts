@@ -37,11 +37,6 @@ export class PocketController {
     return this.pocketService.GetPocketDetails(user.user_id, pocketId);
   }
 
-  @Get('/balance')
-  GetBalance(@GetUser() user: JWTPayloadUser) {
-    return this.pocketService.GetWalletBallance(user.user_id);
-  }
-
   @Post('/create')
   CreatePocket(
     @Body() payload: CreatePocketDTO,

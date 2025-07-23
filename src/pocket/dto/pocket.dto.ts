@@ -5,6 +5,9 @@ export class CreatePocketDTO {
   pocket_name: string;
 
   @IsNotEmpty()
+  pocket_emoji: string;
+
+  @IsNotEmpty()
   @IsNumber()
   pocket_amount: number;
 
@@ -15,6 +18,9 @@ export class CreatePocketDTO {
 export class UpdatePocketDTO {
   @IsNotEmpty()
   pocket_name: string;
+
+  @IsNotEmpty()
+  pocket_emoji: string;
 
   @IsNotEmpty()
   @IsNumber()
