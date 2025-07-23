@@ -130,6 +130,54 @@ export class TransactionService {
     });
   }
 
+  async getIncome(userId: string, queryPage: QueryPagination) {
+    const activeWallet = await this.walletService.GetActiveWallet(userId);
+
+    const [data, meta] = await this.prisma
+      .extends()
+      .recentTransaction.paginate({
+        where: {
+          transaction_type: 'INCOME',
+          wallet_owner: {
+            wallet_id: activeWallet.wallet_id,
+          },
+        },
+      })
+      .withPages({
+        page: queryPage.page,
+        limit: queryPage.limit,
+      });
+
+    return {
+      data,
+      meta,
+    };
+  }
+
+  async getExpense(userId: string, queryPage: QueryPagination) {
+    const activeWallet = await this.walletService.GetActiveWallet(userId);
+
+    const [data, meta] = await this.prisma
+      .extends()
+      .recentTransaction.paginate({
+        where: {
+          transaction_type: 'EXPENSE',
+          wallet_owner: {
+            wallet_id: activeWallet.wallet_id,
+          },
+        },
+      })
+      .withPages({
+        page: queryPage.page,
+        limit: queryPage.limit,
+      });
+
+    return {
+      data,
+      meta,
+    };
+  }
+
   async transactionSummary(userId: string) {
     const activeWallet = await this.walletService.GetActiveWallet(userId);
 
