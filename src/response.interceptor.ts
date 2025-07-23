@@ -40,9 +40,9 @@ export class TransformInterceptor<T>
       map((data) => {
         const responseData = data === null || data === undefined ? null : data;
         const message = this.getDefaultMessage(statusCode);
-        const finalMessage = responseData.message || message;
-        const finalStatus = responseData.status || statusCode;
-        const metaData = responseData.meta;
+        const finalMessage = responseData?.message || message;
+        const finalStatus = responseData?.status || statusCode;
+        const metaData = responseData?.meta;
 
         if (responseData) {
           delete responseData.message;
@@ -53,7 +53,7 @@ export class TransformInterceptor<T>
           statusCode: finalStatus,
           message: finalMessage,
           timeStamp: new Date().toISOString(),
-          data: responseData.data || responseData,
+          data: responseData?.data || responseData,
           meta: metaData,
         };
       }),

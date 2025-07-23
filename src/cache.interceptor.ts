@@ -50,8 +50,8 @@ export class HttpCacheInterceptor extends CacheInterceptor {
     const baseEndpoint = request.url.split('/')[1];
 
     const keys = await this.redisService.getAllKeys(
-      baseEndpoint,
       request?.user?.user_id,
+      baseEndpoint,
     );
 
     const ignoreCaching = this.reflector.get<boolean>(
