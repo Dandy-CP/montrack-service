@@ -5,8 +5,9 @@ import { WalletService } from '../wallet/wallet.service';
 import { PocketService } from '../pocket/pocket.service';
 import { UploadService } from '../upload/upload.service';
 import { GoalsService } from '../goals/goals.service';
-import { QueryPagination } from '../prisma/dto/query-pagination.dto';
 import { RedisService } from '../redis/redis.service';
+import { QueryPagination } from '../prisma/dto/query-pagination.dto';
+import { QueryFilter } from '../prisma/dto/query-filter.dto';
 
 @Injectable()
 export class TransactionService {
@@ -21,17 +22,29 @@ export class TransactionService {
 
   async GetTransactionList(
     userId: string,
-    transactionFrom: string,
     queryPage: QueryPagination,
+    queryFilter: QueryFilter,
   ) {
     const [data, meta] = await this.prisma
       .extends()
       .recentTransaction.paginate({
         where: {
-          transaction_from: transactionFrom,
+          transaction_type: queryFilter.transactionType,
+          transaction_from: queryFilter.transactionFrom,
           wallet_owner: {
             wallet_owner_id: userId,
           },
+          created_at: {
+            gte: queryFilter.startDate
+              ? new Date(queryFilter.startDate)
+              : undefined, // Start of date range
+            lte: queryFilter.endDate
+              ? new Date(queryFilter.endDate)
+              : undefined, // End of date range
+          },
+        },
+        orderBy: {
+          created_at: 'desc',
         },
       })
       .withPages({
@@ -128,54 +141,6 @@ export class TransactionService {
         ...relationData,
       },
     });
-  }
-
-  async getIncome(userId: string, queryPage: QueryPagination) {
-    const activeWallet = await this.walletService.GetActiveWallet(userId);
-
-    const [data, meta] = await this.prisma
-      .extends()
-      .recentTransaction.paginate({
-        where: {
-          transaction_type: 'INCOME',
-          wallet_owner: {
-            wallet_id: activeWallet.wallet_id,
-          },
-        },
-      })
-      .withPages({
-        page: queryPage.page,
-        limit: queryPage.limit,
-      });
-
-    return {
-      data,
-      meta,
-    };
-  }
-
-  async getExpense(userId: string, queryPage: QueryPagination) {
-    const activeWallet = await this.walletService.GetActiveWallet(userId);
-
-    const [data, meta] = await this.prisma
-      .extends()
-      .recentTransaction.paginate({
-        where: {
-          transaction_type: 'EXPENSE',
-          wallet_owner: {
-            wallet_id: activeWallet.wallet_id,
-          },
-        },
-      })
-      .withPages({
-        page: queryPage.page,
-        limit: queryPage.limit,
-      });
-
-    return {
-      data,
-      meta,
-    };
   }
 
   async transactionSummary(userId: string) {

@@ -28,6 +28,9 @@ export class PocketService {
         where: {
           wallet_owner_id: activeWallet.wallet_id,
         },
+        orderBy: {
+          created_at: 'desc',
+        },
         include: {
           pocket_history: true,
           wallet_owner: true,

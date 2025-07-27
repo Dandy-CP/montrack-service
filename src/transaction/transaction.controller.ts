@@ -5,6 +5,7 @@ import { GetUser } from '../auth/decorators/user.decorator';
 import { JWTPayloadUser } from '../auth/interface/authResponse.interface';
 import { CreateTransactionBodyDTO } from './dto/transaction.dto';
 import { QueryPagination } from '../prisma/dto/query-pagination.dto';
+import { QueryFilter } from '../prisma/dto/query-filter.dto';
 
 @Controller('transaction')
 export class TransactionController {
@@ -13,35 +14,19 @@ export class TransactionController {
   @Get('/list')
   GetListTransaction(
     @GetUser() user: JWTPayloadUser,
-    @Query('transaction_from') transactionFrom: string,
     @Query() query: QueryPagination,
+    @Query() queryFilter: QueryFilter,
   ) {
     return this.transactionService.GetTransactionList(
       user.user_id,
-      transactionFrom,
       query,
+      queryFilter,
     );
   }
 
   @Get('/summary')
   GetTransactionSummary(@GetUser() user: JWTPayloadUser) {
     return this.transactionService.transactionSummary(user.user_id);
-  }
-
-  @Get('/income')
-  GetIncomeList(
-    @GetUser() user: JWTPayloadUser,
-    @Query() query: QueryPagination,
-  ) {
-    return this.transactionService.getIncome(user.user_id, query);
-  }
-
-  @Get('/expense')
-  GetExpenseList(
-    @GetUser() user: JWTPayloadUser,
-    @Query() query: QueryPagination,
-  ) {
-    return this.transactionService.getExpense(user.user_id, query);
   }
 
   @Post('/create')

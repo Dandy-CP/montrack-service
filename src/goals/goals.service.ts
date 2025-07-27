@@ -34,6 +34,9 @@ export class GoalsService {
           goals_history: true,
           wallet_owner: true,
         },
+        orderBy: {
+          created_at: 'desc',
+        },
       })
       .withPages({
         page: queryPage.page,

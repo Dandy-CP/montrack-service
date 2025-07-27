@@ -21,6 +21,9 @@ export class WalletService {
       .extends()
       .wallet.paginate({
         where: { wallet_owner_id: userId },
+        orderBy: {
+          is_wallet_active: 'desc',
+        },
         include: {
           user_pocket: true,
           user_goals: true,
@@ -43,18 +46,46 @@ export class WalletService {
       include: {
         user_goals: true,
         user_pocket: true,
-        recent_transaction: true,
-        wallet_owner: {
-          select: {
-            user_id: true,
-            name: true,
-            email: true,
-          },
-        },
       },
     });
 
-    return walletInDB.filter((value) => value.is_wallet_active === true)[0];
+    const activeWallet = walletInDB.filter(
+      (value) => value.is_wallet_active === true,
+    )[0];
+
+    // Fetch income and expense transactions in parallel
+    const [trxIncomeInDB, trxExpenseInDB] = await Promise.all([
+      this.prisma.recentTransaction.findMany({
+        where: {
+          transaction_type: 'INCOME',
+          wallet_owner: { wallet_id: activeWallet.wallet_id },
+        },
+      }),
+      this.prisma.recentTransaction.findMany({
+        where: {
+          transaction_type: 'EXPENSE',
+          wallet_owner: { wallet_id: activeWallet.wallet_id },
+        },
+      }),
+    ]);
+
+    // Sum income and expense amounts
+    const income = trxIncomeInDB.reduce(
+      (sum, trx) => sum + trx.transaction_ammount,
+      0,
+    );
+    const expense = trxExpenseInDB.reduce(
+      (sum, trx) => sum + trx.transaction_ammount,
+      0,
+    );
+
+    return {
+      ...activeWallet,
+      summary: {
+        income,
+        expense,
+      },
+    };
   }
 
   async CreateWallet(
