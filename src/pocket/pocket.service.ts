@@ -140,6 +140,7 @@ export class PocketService {
       (accumulator, currentValue) => {
         return accumulator + currentValue;
       },
+      0,
     );
 
     const availableWalletBalance =
