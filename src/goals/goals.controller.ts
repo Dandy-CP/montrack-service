@@ -30,6 +30,11 @@ export class GoalsController {
     return this.goalsService.GetGoalsList(user.user_id, query);
   }
 
+  @Get('/detail')
+  GetGoalDetail(@Query('goals_id') goalsId: string) {
+    return this.goalsService.getGoalsDetail(goalsId);
+  }
+
   @Post('/create')
   @FormDataRequest()
   CreateGoals(

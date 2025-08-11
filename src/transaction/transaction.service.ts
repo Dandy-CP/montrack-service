@@ -25,6 +25,8 @@ export class TransactionService {
     queryPage: QueryPagination,
     queryFilter: QueryFilter,
   ) {
+    const activeWallet = await this.walletService.GetActiveWallet(userId);
+
     const [data, meta] = await this.prisma
       .extends()
       .recentTransaction.paginate({
@@ -32,6 +34,7 @@ export class TransactionService {
           transaction_type: queryFilter.transactionType,
           transaction_from: queryFilter.transactionFrom,
           wallet_owner: {
+            wallet_id: activeWallet.wallet_id,
             wallet_owner_id: userId,
           },
           created_at: {

@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletService } from '../wallet/wallet.service';
 import { UploadService } from '../upload/upload.service';
+import { RedisService } from '../redis/redis.service';
 import {
   CreateGoalsDTO,
   UpdateGoalsBalanceDTO,
@@ -19,6 +20,7 @@ export class GoalsService {
     private prisma: PrismaService,
     private walletService: WalletService,
     private uploadService: UploadService,
+    private redisService: RedisService,
   ) {}
 
   async GetGoalsList(userId: string, queryPage: QueryPagination) {
@@ -49,6 +51,23 @@ export class GoalsService {
     };
   }
 
+  async getGoalsDetail(goalsId: string) {
+    const goalsInDB = await this.prisma.goals.findUnique({
+      where: {
+        goals_id: goalsId,
+      },
+      include: {
+        goals_history: true,
+      },
+    });
+
+    if (!goalsInDB) {
+      throw new NotFoundException('Goals not found');
+    }
+
+    return goalsInDB;
+  }
+
   async CreateGoals(payload: CreateGoalsDTO, userId: string) {
     const { attachment_file, ...restPayload } = payload;
 
@@ -64,6 +83,8 @@ export class GoalsService {
 
       uploadedUrl = uploadedAttachment.fullPath;
     }
+
+    await this.redisService.deleteAllRelatedKeys('wallet');
 
     return await this.prisma.goals.create({
       data: {
@@ -101,6 +122,8 @@ export class GoalsService {
 
       uploadedUrl = uploadedAttachment.fullPath;
     }
+
+    await this.redisService.deleteAllRelatedKeys('wallet');
 
     return await this.prisma.goals.update({
       where: {
@@ -160,6 +183,8 @@ export class GoalsService {
     if (!goalsInDB) {
       throw new NotFoundException('Goals not found');
     }
+
+    await this.redisService.deleteAllRelatedKeys('wallet');
 
     await this.prisma.goals.delete({
       where: {

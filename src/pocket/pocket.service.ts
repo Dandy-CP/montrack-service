@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletService } from '../wallet/wallet.service';
+import { RedisService } from '../redis/redis.service';
 import {
   CreatePocketDTO,
   UpdatePocketBalanceDTO,
@@ -17,6 +18,7 @@ export class PocketService {
   constructor(
     private prisma: PrismaService,
     private walletService: WalletService,
+    private redisService: RedisService,
   ) {}
 
   async GetPocketList(userId: string, queryPage: QueryPagination) {
@@ -88,6 +90,8 @@ export class PocketService {
       activeWallet.wallet_amount - allPocketBalance;
 
     if (pocket_amount <= availableWalletBalance) {
+      await this.redisService.deleteAllRelatedKeys('wallet');
+
       return await this.prisma.pocket.create({
         data: {
           pocket_name: pocket_name,
@@ -206,6 +210,8 @@ export class PocketService {
     if (!pocketInDB) {
       throw new NotFoundException('Pocket not found');
     }
+
+    await this.redisService.deleteAllRelatedKeys('wallet');
 
     await this.prisma.pocket.delete({
       where: {

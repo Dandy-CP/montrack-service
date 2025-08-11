@@ -4,6 +4,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import {
   CreateWalletBodyDTO,
   UpdateBalanceWalletDTO,
@@ -14,7 +15,10 @@ import { QueryPagination } from '../prisma/dto/query-pagination.dto';
 
 @Injectable()
 export class WalletService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private RedisService: RedisService,
+  ) {}
 
   async GetWalletList(userId: string, queryPage: QueryPagination) {
     const [data, meta] = await this.prisma
@@ -247,6 +251,8 @@ export class WalletService {
         is_wallet_active: false,
       },
     });
+
+    await this.RedisService.deleteAllRelatedKeys(userID, 'transaction');
 
     return updatedValue;
   }

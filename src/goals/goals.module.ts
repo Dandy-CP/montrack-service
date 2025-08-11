@@ -7,9 +7,16 @@ import { WalletService } from '../wallet/wallet.service';
 import { UploadModule } from '../upload/upload.module';
 import { UploadService } from '../upload/upload.service';
 import { SupabaseModule } from '../supabase/supabase.module';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
-  imports: [NestjsFormDataModule, WalletModule, UploadModule, SupabaseModule],
+  imports: [
+    NestjsFormDataModule,
+    WalletModule,
+    UploadModule,
+    SupabaseModule,
+    RedisModule,
+  ],
   controllers: [GoalsController],
   providers: [GoalsService, WalletService, UploadService],
 })
