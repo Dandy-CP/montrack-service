@@ -146,7 +146,7 @@ export class TransactionService {
     });
   }
 
-  async transactionSummary(userId: string) {
+  async transactionSummary(userId: string, queryFilter?: QueryFilter) {
     const activeWallet = await this.walletService.GetActiveWallet(userId);
 
     // Fetch income and expense transactions in parallel
@@ -155,12 +155,28 @@ export class TransactionService {
         where: {
           transaction_type: 'INCOME',
           wallet_owner: { wallet_id: activeWallet.wallet_id },
+          created_at: {
+            gte: queryFilter?.startDate
+              ? new Date(queryFilter.startDate)
+              : undefined, // Start of date range
+            lte: queryFilter?.endDate
+              ? new Date(queryFilter.endDate)
+              : undefined, // End of date range
+          },
         },
       }),
       this.prisma.recentTransaction.findMany({
         where: {
           transaction_type: 'EXPENSE',
           wallet_owner: { wallet_id: activeWallet.wallet_id },
+          created_at: {
+            gte: queryFilter?.startDate
+              ? new Date(queryFilter.startDate)
+              : undefined, // Start of date range
+            lte: queryFilter?.endDate
+              ? new Date(queryFilter.endDate)
+              : undefined, // End of date range
+          },
         },
       }),
     ]);
@@ -170,6 +186,7 @@ export class TransactionService {
       (sum, trx) => sum + trx.transaction_ammount,
       0,
     );
+
     const expense = trxExpenseInDB.reduce(
       (sum, trx) => sum + trx.transaction_ammount,
       0,

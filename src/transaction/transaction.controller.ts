@@ -25,8 +25,14 @@ export class TransactionController {
   }
 
   @Get('/summary')
-  GetTransactionSummary(@GetUser() user: JWTPayloadUser) {
-    return this.transactionService.transactionSummary(user.user_id);
+  GetTransactionSummary(
+    @GetUser() user: JWTPayloadUser,
+    @Query() queryFilter: QueryFilter,
+  ) {
+    return this.transactionService.transactionSummary(
+      user.user_id,
+      queryFilter,
+    );
   }
 
   @Post('/create')

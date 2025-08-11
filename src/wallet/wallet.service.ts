@@ -57,39 +57,7 @@ export class WalletService {
       (value) => value.is_wallet_active === true,
     )[0];
 
-    // Fetch income and expense transactions in parallel
-    const [trxIncomeInDB, trxExpenseInDB] = await Promise.all([
-      this.prisma.recentTransaction.findMany({
-        where: {
-          transaction_type: 'INCOME',
-          wallet_owner: { wallet_id: activeWallet.wallet_id },
-        },
-      }),
-      this.prisma.recentTransaction.findMany({
-        where: {
-          transaction_type: 'EXPENSE',
-          wallet_owner: { wallet_id: activeWallet.wallet_id },
-        },
-      }),
-    ]);
-
-    // Sum income and expense amounts
-    const income = trxIncomeInDB.reduce(
-      (sum, trx) => sum + trx.transaction_ammount,
-      0,
-    );
-    const expense = trxExpenseInDB.reduce(
-      (sum, trx) => sum + trx.transaction_ammount,
-      0,
-    );
-
-    return {
-      ...activeWallet,
-      summary: {
-        income,
-        expense,
-      },
-    };
+    return activeWallet;
   }
 
   async CreateWallet(
