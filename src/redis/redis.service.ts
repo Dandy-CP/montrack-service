@@ -55,6 +55,7 @@ export class RedisService {
     user_id: string;
     name: string;
     email: string;
+    is_2fa_active: boolean;
     access_token: string;
     refresh_token: string;
   }) {
@@ -64,6 +65,7 @@ export class RedisService {
         user_id: payload.user_id,
         name: payload.name,
         email: payload.email,
+        is_2fa_active: payload.is_2fa_active,
         access_token: payload.access_token,
         refresh_token: payload.refresh_token,
       },

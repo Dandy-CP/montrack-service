@@ -86,6 +86,7 @@ export class AuthService {
       user_id: userInDB.user_id,
       name: userInDB.name,
       email: userInDB.email,
+      is_2fa_active: userInDB.is_2fa_active,
     };
 
     const access_token = await this.jwtService.signAsync(jwtPayload);
@@ -97,6 +98,7 @@ export class AuthService {
       user_id: userInDB.user_id,
       name: userInDB.name,
       email: userInDB.email,
+      is_2fa_active: userInDB.is_2fa_active,
       access_token,
       refresh_token,
     });
@@ -166,6 +168,7 @@ export class AuthService {
       user_id: jwtValue.user_id,
       name: jwtValue.name,
       email: jwtValue.email,
+      is_2fa_active: jwtValue.is_2fa_active,
     };
 
     const access_token = await this.jwtService.signAsync(jwtPayload);
@@ -178,6 +181,7 @@ export class AuthService {
       user_id: jwtValue.user_id,
       name: jwtValue.name,
       email: jwtValue.email,
+      is_2fa_active: jwtValue.is_2fa_active,
       access_token,
       refresh_token,
     });
@@ -284,6 +288,7 @@ export class AuthService {
         user_id: userInDB.user_id,
         name: userInDB.name,
         email: userInDB.email,
+        is_2fa_active: userInDB.is_2fa_active,
         access_token,
         refresh_token,
       });
