@@ -373,4 +373,88 @@ export class AuthService {
       throw new UnprocessableEntityException('Inputed pin not valid');
     }
   }
+
+  async resetAccount(userId: string) {
+    const userInDB = await this.prisma.user.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (!userInDB) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Delete all recent relation value in DB
+    await this.prisma.recentTransaction.deleteMany({
+      where: { wallet_owner: { wallet_owner: { user_id: userId } } },
+    });
+    await this.prisma.pocket.deleteMany({
+      where: { wallet_owner: { wallet_owner: { user_id: userId } } },
+    });
+    await this.prisma.goals.deleteMany({
+      where: { wallet_owner: { wallet_owner: { user_id: userId } } },
+    });
+    await this.prisma.wallet.deleteMany({
+      where: { wallet_owner: { user_id: userId } },
+    });
+
+    // Create new wallet
+    const walletPayload = {
+      wallet_name: 'Main Wallet',
+      wallet_amount: 0,
+    };
+    await this.walletService.CreateWallet(walletPayload, userId, true);
+
+    // get all cache key value
+    const allCacheKey = await this.redisService.getAllKeys(userId);
+
+    // loop array of string value to delete each keys
+    for (const value of allCacheKey) {
+      if (!value.includes('session')) {
+        await this.redisService.delete(value);
+      }
+    }
+
+    return {
+      message: 'Success reset account',
+    };
+  }
+
+  async deleteAccount(userId: string) {
+    const userInDB = await this.prisma.user.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (!userInDB) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Delete all relation first before delete user
+    await this.prisma.recentTransaction.deleteMany({
+      where: { wallet_owner: { wallet_owner: { user_id: userId } } },
+    });
+    await this.prisma.pocket.deleteMany({
+      where: { wallet_owner: { wallet_owner: { user_id: userId } } },
+    });
+    await this.prisma.goals.deleteMany({
+      where: { wallet_owner: { wallet_owner: { user_id: userId } } },
+    });
+    await this.prisma.wallet.deleteMany({
+      where: { wallet_owner: { user_id: userId } },
+    });
+
+    // Delete user value from DB
+    await this.prisma.user.delete({ where: { user_id: userId } });
+
+    // get all cache key value
+    const allCacheKey = await this.redisService.getAllKeys(userId);
+
+    // loop array of string value to delete each keys
+    for (const value of allCacheKey) {
+      await this.redisService.delete(value);
+    }
+
+    return {
+      message: 'Success delete user',
+    };
+  }
 }

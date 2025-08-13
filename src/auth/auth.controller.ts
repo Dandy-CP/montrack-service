@@ -80,4 +80,16 @@ export class AppController {
   LogoutUser(@GetUser() user: JWTPayloadUser) {
     return this.authService.logOutUser(user.user_id);
   }
+
+  @Post('/delete-account')
+  @NoCache()
+  DeleteAccount(@GetUser() user: JWTPayloadUser) {
+    return this.authService.deleteAccount(user.user_id);
+  }
+
+  @Post('/reset-account')
+  @NoCache()
+  ResetAccount(@GetUser() user: JWTPayloadUser) {
+    return this.authService.resetAccount(user.user_id);
+  }
 }
