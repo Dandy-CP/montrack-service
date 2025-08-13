@@ -24,13 +24,13 @@ export class GoalsService {
   ) {}
 
   async GetGoalsList(userId: string, queryPage: QueryPagination) {
+    const activeWallet = await this.walletService.GetActiveWallet(userId);
+
     const [data, meta] = await this.prisma
       .extends()
       .goals.paginate({
         where: {
-          wallet_owner: {
-            wallet_owner_id: userId,
-          },
+          wallet_owner_id: activeWallet.wallet_id,
         },
         include: {
           goals_history: true,
