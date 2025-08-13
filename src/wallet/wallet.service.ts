@@ -211,6 +211,8 @@ export class WalletService {
     // Update all wallet where not in inputed wallet id
     await this.prisma.wallet.updateMany({
       where: {
+        wallet_owner_id: userID,
+        is_wallet_active: true,
         NOT: {
           wallet_id: walletID,
         },
