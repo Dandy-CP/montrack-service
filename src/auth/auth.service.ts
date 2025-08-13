@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { WalletService } from '../wallet/wallet.service';
 import { TotpService } from '../totp/totp.service';
 import { RedisService } from '../redis/redis.service';
+import { UserInCache } from './interface/authResponse.interface';
 import {
   SignInBodyDTO,
   SignUpBodyDTO,
@@ -31,7 +32,9 @@ export class AuthService {
   ) {}
 
   async getLogedUser(userId: string) {
-    const userInCache = await this.redisService.get(`session:${userId}`);
+    const userInCache = (await this.redisService.get(
+      `session:${userId}`,
+    )) as unknown as UserInCache;
 
     if (userInCache) {
       return userInCache;
@@ -235,6 +238,8 @@ export class AuthService {
     const { token_otp } = this.totpService.VerifyTotp(payload.totp_secret);
 
     if (payload.token_pin === token_otp) {
+      const userSession = await this.getLogedUser(userId);
+
       const updatedValue = await this.prisma.user.update({
         where: {
           user_id: userId,
@@ -243,6 +248,19 @@ export class AuthService {
           is_2fa_active: true,
           totp_secrete: payload.totp_secret,
         },
+      });
+
+      // Delete existing value in cache
+      await this.redisService.delete(`session:${userId}`);
+
+      // Update session with new value
+      await this.redisService.setUserSession({
+        user_id: userInDB.user_id,
+        name: userInDB.name,
+        email: userInDB.email,
+        is_2fa_active: true,
+        access_token: userSession.access_token,
+        refresh_token: userSession.refresh_token,
       });
 
       return {
@@ -323,6 +341,8 @@ export class AuthService {
     const { token_otp } = this.totpService.VerifyTotp(userInDB.totp_secrete!);
 
     if (payload.token_pin === token_otp) {
+      const userSession = await this.getLogedUser(userId);
+
       await this.prisma.user.update({
         where: {
           user_id: userId,
@@ -331,6 +351,19 @@ export class AuthService {
           is_2fa_active: false,
           totp_secrete: null,
         },
+      });
+
+      // Delete existing value in cache
+      await this.redisService.delete(`session:${userId}`);
+
+      // Update session value in cache
+      await this.redisService.setUserSession({
+        user_id: userInDB.user_id,
+        name: userInDB.name,
+        email: userInDB.email,
+        is_2fa_active: false,
+        access_token: userSession.access_token,
+        refresh_token: userSession.refresh_token,
       });
 
       return {
