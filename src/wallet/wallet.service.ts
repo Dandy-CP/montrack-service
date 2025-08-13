@@ -17,7 +17,7 @@ import { QueryPagination } from '../prisma/dto/query-pagination.dto';
 export class WalletService {
   constructor(
     private prisma: PrismaService,
-    private RedisService: RedisService,
+    private redisService: RedisService,
   ) {}
 
   async GetWalletList(userId: string, queryPage: QueryPagination) {
@@ -220,7 +220,15 @@ export class WalletService {
       },
     });
 
-    await this.RedisService.deleteAllRelatedKeys(userID, 'transaction');
+    // get all cache key value
+    const allCacheKey = await this.redisService.getAllKeys(userID);
+
+    // loop array of string value to delete each keys
+    for (const value of allCacheKey) {
+      if (!value.includes('session')) {
+        await this.redisService.delete(value);
+      }
+    }
 
     return updatedValue;
   }
