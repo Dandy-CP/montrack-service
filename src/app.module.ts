@@ -3,8 +3,6 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
 import { createKeyv } from '@keyv/redis';
-import { Keyv } from 'keyv';
-import { CacheableMemory } from 'cacheable';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -28,14 +26,8 @@ import { RedisModule } from './redis/redis.module';
         return {
           stores: [
             // default store
-            createKeyv(process.env.REDIS_URL),
-
-            // Second Storage for fallback stores
-            new Keyv({
-              store: new CacheableMemory({
-                ttl: 3600000, // 1 Hours
-                lruSize: 5000,
-              }),
+            createKeyv(process.env.REDIS_URL, {
+              throwOnConnectError: false,
             }),
           ],
           ttl: 3600000, // 1 Hours
