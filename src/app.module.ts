@@ -15,6 +15,7 @@ import { UploadModule } from './upload/upload.module';
 import { GoalsModule } from './goals/goals.module';
 import { HttpCacheInterceptor } from './cache.interceptor';
 import { RedisModule } from './redis/redis.module';
+import { CronModule } from './cron/cron.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { RedisModule } from './redis/redis.module';
     UploadModule,
     GoalsModule,
     RedisModule,
+    CronModule,
   ],
   controllers: [AppController],
   providers: [
